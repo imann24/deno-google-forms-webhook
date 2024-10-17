@@ -2,6 +2,7 @@
 import 'jsr:@std/dotenv/load'
 import * as postgres from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
+const apiKey = Deno.env.get('API_KEY')
 const databaseUrl = Deno.env.get('DATABASE_URL')!
 const pool = new postgres.Pool(databaseUrl, 3, true)
 const connection = await pool.connect()
@@ -10,6 +11,10 @@ Deno.serve(async (req: Request) => {
 	if (req.body === null) {
 		return new Response('Please provide a JSON body')
 	}
+	if (req.headers.get('Authorization') !== apiKey) {
+		return new Response('Unauthorized', { status: 401 })
+	}
+
 	const data = await req.json()
 	const { sleep, mood, timestamp } = data
 	await connection.queryObject`
